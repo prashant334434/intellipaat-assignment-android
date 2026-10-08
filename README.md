@@ -22,7 +22,15 @@ You can download and install the latest debug APK here:
 
 If the embedded video doesn't render on GitHub, you can also add a normal link:
 
-**[▶️ Watch the Learning Dashboard Demo](https://drive.google.com/file/d/1eWNNgxt_He8jEQN6ErMAB-b_Gd8rQ_Fg/view?usp=sharing)**
+**[▶️ Watch the Learning Dashboard Demo]**
+
+
+https://github.com/user-attachments/assets/42eee01e-7e8e-4aed-804f-422706c87f2b
+
+
+
+
+
 
 ---
 
