@@ -10,7 +10,7 @@ The project focuses on a practical learning experience with local-first data han
 
 You can download and install the latest debug APK here:
 
-**[⬇️ Download Learning Dashboard APK](https://drive.google.com/file/d/1NeSTaqNyeGhAfW-dGzM61UACuyzSLSYG/view?usp=sharing)**
+**[⬇️ Download Learning Dashboard APK](https://github.com/prashant334434/intellipaat-assignment-android/blob/main/app/release/app-release.apk)**
 
 > Android may ask you to allow installation from unknown sources when installing the APK manually.
 
