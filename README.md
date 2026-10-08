@@ -1,96 +1,567 @@
-# Learning Dashboard (Android / Kotlin Jetpack Compose)
+# 📚 Learning Dashboard
 
-A production-grade, offline-first Android Learning Dashboard application built with **Kotlin**, **Jetpack Compose (Material 3)**, **MVVM + Clean Architecture**, and **Room Database**.
+A production-style **offline-first Learning Dashboard Android app** built with **Kotlin, Jetpack Compose, Material 3, MVVM, Clean Architecture, and Room**.
+
+The project focuses on a practical learning experience with local-first data handling, reactive UI updates, offline support, and a clean separation between UI, business logic, and data.
+
+## 📱 Demo
+
+### APK
+
+You can download and install the latest debug APK here:
+
+**[⬇️ Download Learning Dashboard APK](https://drive.google.com/file/d/1NeSTaqNyeGhAfW-dGzM61UACuyzSLSYG/view?usp=sharing)**
+
+> Android may ask you to allow installation from unknown sources when installing the APK manually.
+
+### 🎥 Demo Video
+
+<!-- Replace VIDEO_URL with your uploaded video URL -->
+
+<video src="VIDEO_URL" controls width="100%"></video>
+
+If the embedded video doesn't render on GitHub, you can also add a normal link:
+
+**[▶️ Watch the Learning Dashboard Demo](VIDEO_URL)**
 
 ---
 
-## 📱 Features & User Experience Highlights
+## ✨ What the App Includes
 
-- **✨ Fantastic UI/UX**: Custom Material 3 design system featuring Indigo & Electric Cyan branding, subtle elevation, soft borders, and responsive light/dark modes.
-- **⚡ Quick Demo Shortcuts**: One-tap buttons to autofill valid (`alex.johnson@skillforge.io`) or invalid credentials (`wrongpass`) for instant evaluator testing.
-- **🌐 Dynamic Offline Simulator Toggle**: A live switch in the Dashboard TopAppBar (`🌐 Online` ⟷ `📴 Offline`) to simulate network cuts on-the-fly without editing code or toggling airplane mode.
-- **📊 Hero Learning Momentum Card**: Real-time progress gauge displaying overall completion percentage, enrolled courses, and completed lesson counts.
-- **🔍 Search & Filter Chips**: Live search by course name or instructor, plus category chips (`All Courses`, `In Progress`, `Completed`).
-- **✨ Skeleton Shimmer Loading**: Polished animated shimmer placeholder cards for seamless loading transitions instead of generic spinners.
-- **🎯 Interactive Lesson Completion**: Instant reactive toggle on lesson rows with status pill transition (`○ Pending` ➔ `✓ Completed`), smooth progress updates, and a 100% completion celebration banner.
+### 🔐 Login & Demo Shortcuts
+
+The login screen includes quick demo buttons so the application can be tested without manually entering credentials.
+
+- **Valid credentials** — instantly fills valid login details
+- **Invalid credentials** — simulates a failed login
+- Email and password validation
+- Clear authentication error states
+
+### 🌐 Online / Offline Simulator
+
+The dashboard includes an online/offline switch directly in the TopAppBar.
+
+This makes it easy to test offline behavior without enabling airplane mode or changing the source code.
+
+```text
+🌐 Online
+📴 Offline
+```
+
+### 📊 Learning Momentum
+
+The dashboard provides a quick overview of learning progress:
+
+- Overall completion percentage
+- Number of enrolled courses
+- Completed lessons
+- Course progress
+- Lesson completion status
+
+The progress updates immediately when a lesson is completed.
+
+### 🔍 Search & Filtering
+
+Courses can be searched by:
+
+- Course name
+- Instructor
+
+The dashboard also includes filters for:
+
+- All Courses
+- In Progress
+- Completed
+
+### 💀 Skeleton Loading
+
+Instead of showing a generic progress spinner, the app uses animated skeleton/shimmer cards while data is loading.
+
+This keeps the UI feeling responsive during data refreshes.
+
+### ✅ Interactive Lessons
+
+Lessons can be marked as completed directly from the course screen.
+
+The UI reacts immediately:
+
+```text
+○ Pending  →  ✓ Completed
+```
+
+Course progress is recalculated automatically.
+
+When all lessons are completed, the app displays a completion state/celebration banner.
 
 ---
 
-## 🚀 How to Run
+# 🏗️ Architecture
 
-### 1. Run on Device / Emulator
-Open the project in **Android Studio (Ladybug or newer)** and run the `app` configuration, or install the debug APK:
+The application follows **MVVM + Clean Architecture** with a unidirectional data flow.
+
+```text
+┌───────────────────────────────┐
+│        Jetpack Compose        │
+│             UI                │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│          ViewModel            │
+│       StateFlow / UDF         │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│         Domain / Core         │
+│                               │
+│ Entities • Use Cases          │
+│ Business Rules • Repositories │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│          Repository           │
+│                               │
+│     Remote + Local Data       │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│          Room Database        │
+│          SQLite / Flow        │
+└───────────────────────────────┘
+```
+
+### Why this approach?
+
+I wanted the business logic to stay independent from Android UI and framework code.
+
+The `:core` module contains the domain models, validation, progress calculations, and repository contracts. Because it is pure Kotlin/JVM, these parts can be tested without an emulator.
+
+The Android app handles Compose UI, ViewModels, Room, and platform-specific functionality.
+
+This also leaves a clean path toward Kotlin Multiplatform if the domain layer needs to be shared with iOS in the future.
+
+---
+
+# 📴 Offline-First Approach
+
+Room acts as the local **Single Source of Truth**.
+
+The basic flow is:
+
+```text
+Remote API
+    │
+    ▼
+Repository
+    │
+    ├── Merge remote course data
+    │
+    ├── Preserve local lesson progress
+    │
+    ▼
+Room Database
+    │
+    ▼
+Flow
+    │
+    ▼
+ViewModel
+    │
+    ▼
+Compose UI
+```
+
+### Local-first writes
+
+When a user completes a lesson, the change is written to Room immediately.
+
+The UI does not need to wait for a network request.
+
+This means lesson completion continues to work even when the device is offline.
+
+### Preserving progress during sync
+
+When fresh course data arrives from the API, locally completed lessons are preserved.
+
+The repository uses a merge strategy rather than blindly replacing the local database.
+
+```text
+Remote Course Data
+        +
+Local Completion State
+        ↓
+Merged Local State
+        ↓
+Room
+        ↓
+UI
+```
+
+### Offline fallback
+
+If the network request fails:
+
+1. Existing Room data remains available.
+2. The UI continues displaying cached courses.
+3. The app shows the current offline state.
+4. Local lesson updates continue to work.
+
+---
+
+# 🔐 Authentication & Security
+
+The current project uses demo authentication for evaluation purposes.
+
+For a production application, I would use:
+
+### Access Token
+
+Keep short-lived access tokens in memory wherever practical.
+
+### Refresh Token
+
+Store refresh tokens using Android Keystore-backed encrypted storage.
+
+Possible implementation:
+
+- Android Keystore
+- AES-256-GCM
+- Google Tink
+- Encrypted DataStore strategy
+
+Plaintext `SharedPreferences` should not be used for sensitive tokens.
+
+### Network Security
+
+A production implementation should also include:
+
+- HTTPS only
+- TLS
+- Certificate pinning where appropriate
+- Automatic 401 handling
+- Secure token refresh
+- Proper logout/session invalidation
+
+---
+
+# 📈 Scaling the Application
+
+If this application grows to **1 million users and hundreds of courses**, I would make the following changes.
+
+### 1. Paging
+
+Use **Paging 3 + RemoteMediator + Room** instead of loading the entire course catalog at once.
+
+Course metadata can be paginated while detailed lessons are loaded only when needed.
+
+### 2. Offline Sync Queue
+
+Introduce a local outbox for actions such as:
+
+```text
+Lesson Completed
+       ↓
+Local Outbox
+       ↓
+WorkManager
+       ↓
+API
+       ↓
+Server
+```
+
+Each event should have an idempotent ID so retries don't create duplicate updates.
+
+### 3. HTTP Caching
+
+Use:
+
+- `ETag`
+- `If-None-Match`
+- Cache-Control
+
+This reduces unnecessary API responses when course data hasn't changed.
+
+### 4. CDN
+
+Static course content and large assets can be served through a CDN such as CloudFront or Cloudflare.
+
+### 5. Monitoring
+
+At larger scale, I would add:
+
+- Firebase Crashlytics
+- OpenTelemetry
+- API latency monitoring
+- Application performance monitoring
+- Structured logging
+
+---
+
+# 🍎 iOS / macOS Strategy
+
+The architecture was intentionally kept independent enough to support another platform.
+
+A possible iOS implementation would use:
+
+### UI
+
+**SwiftUI**
+
+### Local Storage
+
+**SwiftData** or Core Data
+
+### Architecture
+
+The same general structure:
+
+```text
+SwiftUI
+   ↓
+ViewModel
+   ↓
+Domain
+   ↓
+Repository
+   ↓
+SwiftData
+```
+
+### Security
+
+Refresh tokens can be stored using **iOS Keychain Services**.
+
+### Kotlin Multiplatform
+
+The pure Kotlin `:core` module could potentially be converted into a Kotlin Multiplatform shared module.
+
+That would allow business logic such as:
+
+- Domain models
+- Validation
+- Progress calculation
+- Repository algorithms
+
+to be shared between Android and iOS.
+
+---
+
+# 🧪 Testing
+
+The project includes a pure Kotlin test suite inside the `:core` module.
+
+Tests cover:
+
+### `CourseRepositoryTest`
+
+- Offline fallback
+- Local completion preservation
+- Remote/local merge behavior
+- Lesson completion toggling
+- Repository error handling
+
+### `LoginValidationTest`
+
+- Valid emails
+- Empty fields
+- Invalid email formats
+- Password length validation
+
+### `CourseProgressTest`
+
+- Empty courses
+- Zero completed lessons
+- Partial completion
+- 100% completion
+- Percentage calculation and rounding
+
+### `AuthRepositoryTest`
+
+- Successful authentication
+- Invalid input
+- Invalid credentials
+- Network errors
+- Session creation
+
+Run the tests with:
+
+```bash
+./gradlew :core:test
+```
+
+The tests run on the JVM, so an Android emulator is not required.
+
+---
+
+# 🚀 Running the Project
+
+## Requirements
+
+- Android Studio Ladybug or newer
+- JDK compatible with the project
+- Android SDK
+- Android emulator or physical Android device
+
+## Clone the Repository
+
+```bash
+git clone <your-repository-url>
+cd <project-folder>
+```
+
+Open the project in Android Studio and let Gradle finish syncing.
+
+## Run the App
+
+Run the `app` configuration from Android Studio.
+
+Or build the debug APK:
+
 ```bash
 ./gradlew assembleDebug
+```
+
+The APK will be generated at:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+Install it using ADB:
+
+```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 2. Run Pure Kotlin Domain & Repository Unit Tests
-All business logic runs without an emulator in < 2 seconds:
-```bash
-./gradlew :core:test
+---
+
+# 🔑 Demo Credentials
+
+### Valid Login
+
+Any valid email format with a password containing at least 6 characters.
+
+Example:
+
+```text
+Email: student@skillforge.io
+Password: password123
 ```
 
-### 3. Demo Credentials
-- **Valid Login**: Any valid email format (e.g. `student@skillforge.io`) with password of 6+ characters. *(Or tap "Autofill Valid Credentials" on the login screen)*.
-- **Simulate Rejection**: Use password `wrongpass` *(or tap "Autofill Invalid")*.
+You can also use the **Autofill Valid Credentials** button on the login screen.
 
----
+### Invalid Login
 
-## 📝 Answers to Technical Evaluation Questions
+Use:
 
-### 1. Architecture: Why did you choose your architecture?
-We chose **MVVM with Clean Architecture principles** and unidirectional data flow (UDF):
-- **UI Layer (`app`)**: Jetpack Compose screens consuming immutable `StateFlow<UiState>` emitted by ViewModels. Screens are purely declarative and react to state.
-- **Domain & Repository Layer (`:core`)**: Pure Kotlin/JVM module with zero Android framework dependencies. Contains domain entities (`Course`, `Lesson`), business rules (progress derivation, validation), and repository contracts (ports).
-- **Data Layer (`app`)**: Local **Room Database** acts as the **Single Source of Truth (SSOT)**. The repository fetches remote data, merges it with local progress, and updates Room. The UI only ever observes Room via reactive `Flow`.
-- **Modularity & Testability**: Decoupling domain logic into `:core` allows unit tests to execute in milliseconds on the JVM without mocking Android platform classes, and provides a clear path for code sharing with iOS via **Kotlin Multiplatform (KMP)**.
-
----
-
-### 2. Offline Support: How are you storing and loading offline data?
-- **Room Database Cache**: Courses and lessons are persisted in normalized SQLite tables (`courses`, `lessons`).
-- **Reactive Streaming (`Flow`)**: ViewModels observe Room via `Flow`. Any database mutation (from remote sync or local lesson completion) automatically pushes updated state to the UI.
-- **Local-First Write Strategy**: Marking a lesson complete updates Room immediately inside a `Mutex` lock, ensuring zero UI latency and full offline functionality.
-- **Progress Preservation Merge Rule**: When refreshing from the API while online, the repository merges remote catalog updates with locally completed lesson IDs (`keepLocalCompletions`), preventing the server from overwriting client-side progress.
-- **Graceful Degradation**: If network refresh fails, the app falls back to cached data seamlessly and displays an offline status banner.
-
----
-
-### 3. Security: Where would you store authentication tokens in a production application?
-1. **Short-Lived Access Tokens**: Stored exclusively in volatile memory (within an in-memory session manager or singleton) to minimize exposure to disk dumping.
-2. **Long-Lived Refresh Tokens**: Stored encrypted in **Android Keystore-backed storage** using AES-256-GCM encryption keys (via Google Tink or Jetpack DataStore wrapped with Android KeyStore hardware-backed master keys). Plain `SharedPreferences` or plaintext databases are strictly avoided.
-3. **Transport Security**: Enforce TLS 1.3 with HTTPS, Certificate Pinning (via OkHttp `CertificatePinner`), and automated 401 token refresh via an OkHttp `Authenticator`.
-
----
-
-### 4. Scale: If this application had 1 million users + hundreds of courses, mention 3–5 improvements:
-1. **Catalog Pagination & On-Demand Lesson Fetching**: Replace full catalog fetching with Jetpack Paging 3 (`RemoteMediator` + Room). Only load high-level course metadata on the dashboard, and fetch detailed lesson trees on-demand when opening the Course Details screen.
-2. **Reliable Offline Outbox & Event-Driven Sync**: Implement a local SQLite outbox queue with **WorkManager** to record lesson completion events with idempotent UUIDs and timestamps. Synchronize with the backend using exponential backoff and batch endpoints.
-3. **HTTP Conditional Requests & Cache-Control**: Use `ETag` and `If-None-Match` headers so unchanged course catalogs return `304 Not Modified`, saving server bandwidth and client battery.
-4. **CDN Edge Caching**: Distribute static course assets and metadata globally via Cloudflare / CloudFront CDN edge servers.
-5. **Observability & Performance Tracking**: Integrate OpenTelemetry, Firebase Crashlytics, and network latency monitoring to track API SLAs at scale.
-
----
-
-### 5. Second Platform: How would you implement this on iOS/macOS?
-1. **UI Layer**: Built with **SwiftUI** using `@Observable` ViewModels (iOS 17+) or `ObservableObject` with `@Published` properties.
-2. **Local Storage**: Use **SwiftData** (or CoreData) with `@Query` macros for reactive database observations similar to Room's `Flow`.
-3. **Architecture**: Implement the same MVVM + Repository pattern. Repositories expose Swift `AsyncSequence` or Combine publishers.
-4. **Security**: Store refresh tokens in the hardware-backed **iOS Keychain Services** with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`.
-5. **Logic Reuse via KMP**: Because our `:core` module is pure Kotlin with no Android dependencies, it can be compiled directly into an Apple XCFramework via Kotlin Multiplatform, sharing 100% of domain models, validation, and repository algorithms across iOS and Android.
-
----
-
-## 🧪 Unit Test Suite Summary
-
-The pure Kotlin `:core` test suite includes comprehensive tests for:
-- `CourseRepositoryTest`: Tests offline fallback, local completion preservation on sync, toggle actions, and error handling.
-- `LoginValidationTest`: Tests valid emails, blank inputs, malformed regex patterns, and password length constraints.
-- `CourseProgressTest`: Tests percentage calculation edge cases (0 lessons, 100% completion, rounding).
-- `AuthRepositoryTest`: Tests successful auth session creation, invalid input rejection, credential failures, and network errors.
-
-Run tests anytime with:
-```bash
-./gradlew :core:test
+```text
+Password: wrongpass
 ```
+
+or use the **Autofill Invalid** button to test the rejection flow.
+
+---
+
+# 🛠️ Tech Stack
+
+| Technology | Usage |
+|---|---|
+| Kotlin | Primary language |
+| Jetpack Compose | UI |
+| Material 3 | Design system |
+| MVVM | Presentation architecture |
+| Clean Architecture | Project structure |
+| Room | Local database |
+| SQLite | Local persistence |
+| Kotlin Flow | Reactive data |
+| StateFlow | UI state |
+| Coroutines | Async operations |
+| WorkManager | Future background sync |
+| Gradle | Build system |
+| JUnit | Unit testing |
+
+---
+
+# 📂 High-Level Project Structure
+
+```text
+.
+├── app/
+│   ├── data/
+│   │   ├── local/
+│   │   ├── remote/
+│   │   └── repository/
+│   │
+│   ├── presentation/
+│   │   ├── login/
+│   │   ├── dashboard/
+│   │   └── course/
+│   │
+│   └── ...
+│
+├── core/
+│   ├── domain/
+│   ├── repository/
+│   ├── validation/
+│   └── test/
+│
+└── README.md
+```
+
+---
+
+# 🎯 Project Goals
+
+This project was built to demonstrate more than just a Compose UI.
+
+The main focus was on:
+
+- Clean architecture
+- Offline-first data handling
+- Reactive UI with Flow
+- Local database design
+- Repository patterns
+- Testable business logic
+- Practical error handling
+- Responsive Material 3 UI
+- Production-oriented scalability
+
+---
+
+## 📸 Screenshots
+
+You can add screenshots here to make the repository easier to evaluate.
+
+```text
+screenshots/
+├── login.png
+├── dashboard.png
+├── course-details.png
+├── offline-mode.png
+└── completed-course.png
+```
+
+Example:
+
+```markdown
+![Login Screen](screenshots/login.png)
+
+![Dashboard](screenshots/dashboard.png)
+```
+
+---
+
+## 👨‍💻 Author
+
+**Prashant Sharma**
+
+React Native / Android Developer  
+Kotlin • Jetpack Compose • React Native • TypeScript • AI/LLM Integration
+
+---
+
+⭐ If you find the project useful, feel free to star the repository.
