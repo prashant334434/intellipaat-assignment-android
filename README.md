@@ -532,34 +532,13 @@ The main focus was on:
 
 ---
 
-## 📸 Screenshots
 
-You can add screenshots here to make the repository easier to evaluate.
-
-```text
-screenshots/
-├── login.png
-├── dashboard.png
-├── course-details.png
-├── offline-mode.png
-└── completed-course.png
-```
-
-Example:
-
-```markdown
-![Login Screen](screenshots/login.png)
-
-![Dashboard](screenshots/dashboard.png)
-```
-
----
 
 ## 👨‍💻 Author
 
 **Prashant Sharma**
 
-React Native / Android Developer  
+React Native / Android Developer / IOS Developer 
 Kotlin • Jetpack Compose • React Native • TypeScript • AI/LLM Integration
 
 ---
